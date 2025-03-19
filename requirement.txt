@@ -1,0 +1,11 @@
+matplotlib
+seaborn
+pandas
+tensorflow
+nltk
+numpy
+streamlit
+joblib
+Smote
+statsmodels
+imbalanced-learn
