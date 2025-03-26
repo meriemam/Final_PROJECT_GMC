@@ -13,6 +13,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from xgboost import XGBClassifier
 from sklearn.svm import SVC
+from sklearn.metrics import confusion_matrix
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.naive_bayes import GaussianNB
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
@@ -120,6 +121,14 @@ def evaluate_models(models, X_train, y_train, X_test, y_test):
             "Modèle": name, "Accuracy": accuracy, "Precision": precision,
             "Recall": recall, "F1 Score": f1, "AUC": auc
         })
+        # Matrice de confusion
+        cm = confusion_matrix(y_test, y_pred)
+        plt.figure(figsize=(6, 4))
+        sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", xticklabels=["Négatif", "Positif"], yticklabels=["Négatif", "Positif"])
+        plt.xlabel("Prédit")
+        plt.ylabel("Réel")
+        plt.title(f"Matrice de confusion - {name}")
+        plt.show()
 
     return pd.DataFrame(results), fpr_dict, tpr_dict, auc_dict
 
@@ -135,7 +144,6 @@ best_model = models[best_model_name]
 joblib.dump(best_model, "best_model.pkl")
 # Sauvegarder le scaler
 joblib.dump(scaler, "scaler.pkl")
-
 print(f"🏆 Meilleur modèle : {best_model_name} sauvegardé sous 'best_model.pkl'.")
 
 # Visualisation des scores AUC
@@ -171,6 +179,15 @@ plt.xlabel("Taux de Faux Positifs (FPR)")
 plt.ylabel("Taux de Vrais Positifs (TPR)")
 plt.legend(loc="lower right")
 plt.show()
+# Matrice de confusion pour le meilleur modèle
+y_pred_best = best_model.predict(X_test_scaled)
+cm_best = confusion_matrix(y_test, y_pred_best)
+plt.figure(figsize=(6, 4))
+sns.heatmap(cm_best, annot=True, fmt="d", cmap="Blues", xticklabels=["Négatif", "Positif"], yticklabels=["Négatif", "Positif"])
+plt.xlabel("Prédit")
+plt.ylabel("Réel")
+plt.title(f"Matrice de confusion - {best_model_name}")
+plt.show()
 ### deploiement du projet  sur Streamlit ###
 
 # Charger le modèle et le scaler
@@ -178,6 +195,20 @@ plt.show()
 st.sidebar.title('Prédiction des Maladies Cardiaques 💖')
 st.sidebar.markdown("""
 Cette application utilise des modèles de Machine Learning pour prédire le risque de maladies cardiaques sur la base de plusieurs caractéristiques médicales.
+
+### Définition des maladies cardiaques
+Les maladies cardiaques désignent un ensemble de troubles affectant le cœur et les vaisseaux sanguins, notamment l'infarctus du myocarde, l'angine de poitrine et l'insuffisance cardiaque.
+
+### Causes des maladies cardiaques
+Elles peuvent être causées par divers facteurs, tels que :
+- **Hypertension artérielle** : Augmente la charge de travail du cœur.
+- **Hypercholestérolémie** : Provoque l'accumulation de plaques dans les artères.
+- **Tabagisme** : Endommage les vaisseaux sanguins et réduit l'apport d'oxygène au cœur.
+- **Obésité et sédentarité** : Favorisent le développement des maladies cardiovasculaires.
+- **Diabète** : Augmente le risque de complications cardiaques.
+
+### Objectif de l'étude
+L'objectif est de construire un modèle capable de prédire le risque de maladies cardiaques en utilisant diverses caractéristiques médicales et de style de vie. Cette étude peut aider les professionnels de santé à identifier les patients à risque et à mettre en place des mesures préventives adaptées.
 
 ### Modèles utilisés :
 1. **Régression Logistique** : Un modèle simple et efficace pour les problèmes de classification binaire.
@@ -189,17 +220,27 @@ Cette application utilise des modèles de Machine Learning pour prédire le risq
 
 Ces modèles ont été évalués sur leur précision (accuracy), leur rappel (recall), leur précision (precision), leur score F1 et leur AUC (Area Under the Curve).
 """)
-
-# Fonction pour afficher l'interface utilisateur et récupérer les données
 def user_input_features():
     st.title('Prédiction du Risque de Maladies Cardiaques 💖')
-    
+
     features = {
         'male': st.selectbox('Sexe biologique (Masculin, Féminin)', ['Féminin', 'Masculin']),
         'age': st.number_input('Âge du patient en années 🧑‍🦳', 20, 100, 50),
-        'education': st.selectbox("Niveau d'éducation atteint ( 1: 'Élémentaire',2: 'Secondaire',3: 'Collège',4: 'Lycée',5: 'Université',: 'Post-universitaire',7: 'Doctorat')", range(1, 8)),
+        'education': st.selectbox(
+            "Niveau d'éducation atteint",
+            ["Élémentaire", "Secondaire", "Collège", "Lycée", "Université", "Post-universitaire", "Doctorat"]
+        ),
         'currentSmoker': st.selectbox('Le patient est-il fumeur ? (Non, Oui) 🚬', ['Non', 'Oui']),
-        'cigsPerDay': st.number_input('Nombre de cigarettes fumées par jour 🚬', 0, 100, 0),
+    }
+
+    # Ajouter la logique conditionnelle pour le nombre de cigarettes fumées
+    if 'currentSmoker' in features:  # Vérifier que la clé 'currentSmoker' est présente
+        if features['currentSmoker'] == 'Oui':
+            features['cigsPerDay'] = st.number_input('Nombre de cigarettes fumées par jour 🚬', 0, 100, 0)
+        else:
+            features['cigsPerDay'] = 0
+
+    additional_features = {
         'prevalentHyp': st.selectbox("Présence d'hypertension artérielle ? (Non, Oui) 💔", ['Non', 'Oui']),
         'totChol': st.number_input('Taux de cholestérol total en mg/dL 🧪', 100, 600, 200),
         'sysBP': st.number_input('Pression artérielle systolique (mmHg) 💉', 80, 200, 120),
@@ -208,33 +249,33 @@ def user_input_features():
         'heartRate': st.number_input('Fréquence cardiaque (battements par minute) ❤️', 40, 200, 70),
         'glucose': st.number_input('Taux de glucose sanguin en mg/dL 🩸', 40, 300, 100)
     }
-    # Convert gender input from string to numeric for model compatibility
+
+    features.update(additional_features)
+
+    # Convertir les colonnes catégorielles en numériques
     features['male'] = 1 if features['male'] == 'Masculin' else 0
     features['currentSmoker'] = 1 if features['currentSmoker'] == 'Oui' else 0
     features['prevalentHyp'] = 1 if features['prevalentHyp'] == 'Oui' else 0
-    
+
     return pd.DataFrame([features])
 
-# Afficher les résultats de la prédiction
 user_input = user_input_features()
 
+
 if st.button('Faire la prédiction 🧠'):
-    # Charger le modèle et le scaler
+    
     model = joblib.load('best_model.pkl')
     scaler = joblib.load('scaler.pkl')
 
-    # Faire la prédiction avec les données d'entrée
     input_data_scaled = scaler.transform(user_input)
     prediction = model.predict(input_data_scaled)
     prediction_prob = model.predict_proba(input_data_scaled)[:, 1]  # Probabilité de la classe positive
 
-    # Afficher les résultats
     if prediction[0] == 0:
         st.success("Le patient n'a pas de risque élevé de maladie cardiaque. ✅")
     else:
         st.warning("Le patient présente un risque élevé de maladie cardiaque. ⚠️")
 
-    # Afficher la probabilité de la classe positive (risque élevé)
     st.write(f"Probabilité de risque élevé : {prediction_prob[0]:.4f}")
 
 
