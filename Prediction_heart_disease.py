@@ -18,7 +18,7 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.naive_bayes import GaussianNB
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, roc_curve, auc
-
+import os
 # Chargement des données
 df = pd.read_csv('framingham.csv')
 df.info()
@@ -192,43 +192,64 @@ plt.show()
 
 # Charger le modèle et le scaler
 # Informations sur l'application (sidebar avec Markdown)
-st.sidebar.title('Prédiction des Maladies Cardiaques 💖')
+st.sidebar.title('Prédiction des Maladies Cardiaques 🫀')
+
+# Affichage des emojis dans la barre latérale
+st.image("Images/Image1.jpg", caption="Prediction Heart disease",use_container_width =True)
+#st.image("Images/Image2.jpg", caption="Illustration Représentative", use_container_width=True)
 st.sidebar.markdown("""
-Cette application utilise des modèles de Machine Learning pour prédire le risque de maladies cardiaques sur la base de plusieurs caractéristiques médicales.
+Bienvenue dans notre application dédiée à la **prédiction du risque de maladies cardiaques** ! 🫀💓
 
-### Définition des maladies cardiaques
-Les maladies cardiaques désignent un ensemble de troubles affectant le cœur et les vaisseaux sanguins, notamment l'infarctus du myocarde, l'angine de poitrine et l'insuffisance cardiaque.
+### 🚨 **Définition des maladies cardiaques**
+Les maladies cardiaques désignent un ensemble de troubles affectant le cœur et les vaisseaux sanguins, notamment :
+- **Infarctus du myocarde** 💔
+- **Angine de poitrine** 💥
+- **Insuffisance cardiaque** 🫣
 
-### Causes des maladies cardiaques
+### 🌟 **Causes des maladies cardiaques** 🌟
 Elles peuvent être causées par divers facteurs, tels que :
-- **Hypertension artérielle** : Augmente la charge de travail du cœur.
-- **Hypercholestérolémie** : Provoque l'accumulation de plaques dans les artères.
-- **Tabagisme** : Endommage les vaisseaux sanguins et réduit l'apport d'oxygène au cœur.
-- **Obésité et sédentarité** : Favorisent le développement des maladies cardiovasculaires.
-- **Diabète** : Augmente le risque de complications cardiaques.
+- **Hypertension artérielle** ⬆️ : Augmente la charge de travail du cœur.
+- **Hypercholestérolémie** 🧴 : Accumulation de plaques dans les artères.
+- **Tabagisme** 🚬 : Endommage les vaisseaux sanguins et réduit l'apport en oxygène.
+- **Obésité et sédentarité** ⚖️ : Risques liés à un mode de vie inactif.
+- **Diabète** 🍩 : Risque accru de complications cardiaques.
 
-### Objectif de l'étude
-L'objectif est de construire un modèle capable de prédire le risque de maladies cardiaques en utilisant diverses caractéristiques médicales et de style de vie. Cette étude peut aider les professionnels de santé à identifier les patients à risque et à mettre en place des mesures préventives adaptées.
+### 🧐 **Objectif de l'étude**
+L'objectif est de construire un modèle qui prédit le risque de maladies cardiaques basé sur les caractéristiques médicales et de mode de vie. Cela peut aider les professionnels de santé à détecter les risques chez les patients et à prendre des mesures préventives.
 
-### Modèles utilisés :
-1. **Régression Logistique** : Un modèle simple et efficace pour les problèmes de classification binaire.
-2. **Random Forest** : Un ensemble d'arbres de décision qui offre une bonne performance en capturant des relations complexes.
-3. **XGBoost** : Un modèle basé sur des arbres de décision avec des capacités d'apprentissage boosté.
-4. **SVM (Support Vector Machine)** : Utilise des frontières de décision pour classer les données.
-5. **KNN (K-Nearest Neighbors)** : Classifie en fonction des voisins les plus proches.
-6. **Naive Bayes** : Basé sur des probabilités conditionnelles.
+### 🔧 **Modèles utilisés** :
+Nous avons utilisé plusieurs modèles de Machine Learning pour cette tâche :
+1. **Régression Logistique** 🔄 : Pour des prédictions simples mais efficaces.
+2. **Random Forest** 🌲🌲 : Pour des performances robustes avec des arbres de décision multiples.
+3. **XGBoost** 🚀 : Un modèle puissant basé sur le boosting d'arbres de décision.
+4. **SVM (Support Vector Machine)** 🧑‍💻 : Pour les problèmes de classification avec des frontières de décision.
+5. **KNN (K-Nearest Neighbors)** 👯‍♂️ : Basé sur les voisins les plus proches pour classifier les patients.
+6. **Naive Bayes** 📊 : Un modèle probabiliste simple mais efficace.
 
-Ces modèles ont été évalués sur leur précision (accuracy), leur rappel (recall), leur précision (precision), leur score F1 et leur AUC (Area Under the Curve).
+Tous ces modèles ont été évalués avec des critères comme la **précision** (accuracy), le **rappel** (recall), la **précision** (precision), le **score F1**, et l'**AUC** (Area Under the Curve).
+
+### ⚠️ **Attention :** 
+Les résultats de la prédiction sont une estimation basée sur des données médicales. Il est important de consulter un professionnel de santé pour un diagnostic exact. 🩺
+
 """)
 def user_input_features():
     st.title('Prédiction du Risque de Maladies Cardiaques 💖')
-
+ # Dictionary to map education levels to numerical values
+    education_map = {
+        "Élémentaire": 1,
+        "Secondaire": 2,
+        "Collège": 3,
+        "Lycée": 4,
+        "Université": 5,
+        "Post-universitaire": 6,
+        "Doctorat": 7
+    }
     features = {
         'male': st.selectbox('Sexe biologique (Masculin, Féminin)', ['Féminin', 'Masculin']),
         'age': st.number_input('Âge du patient en années 🧑‍🦳', 20, 100, 50),
         'education': st.selectbox(
             "Niveau d'éducation atteint",
-            ["Élémentaire", "Secondaire", "Collège", "Lycée", "Université", "Post-universitaire", "Doctorat"]
+            list(education_map.keys())
         ),
         'currentSmoker': st.selectbox('Le patient est-il fumeur ? (Non, Oui) 🚬', ['Non', 'Oui']),
     }
@@ -256,7 +277,7 @@ def user_input_features():
     features['male'] = 1 if features['male'] == 'Masculin' else 0
     features['currentSmoker'] = 1 if features['currentSmoker'] == 'Oui' else 0
     features['prevalentHyp'] = 1 if features['prevalentHyp'] == 'Oui' else 0
-
+    features['education'] = education_map[features['education']]    
     return pd.DataFrame([features])
 
 user_input = user_input_features()
